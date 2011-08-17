@@ -444,7 +444,7 @@ class VBX_Message extends Model {
 							 "New $owner $message_type Notification - {$message->caller}",
 							 'message',
 							 compact('message'));
-				error_log("message queued for $user->email");
+				error_log("message queued for $email");
 			}
 
 			foreach($numbers as $number)
