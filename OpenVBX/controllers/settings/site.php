@@ -478,13 +478,27 @@ class Site extends User_Controller
 											   $this->twilio_token,
 											   $this->twilio_endpoint);
 				
-				$response = $twilio->request('Accounts/'.$tenant_account_sid, 'POST', array('Status' => 'closed'));
+				$response = $twilio->request("Accounts/{$tenant_account_sid}", 'POST', array('Status' => 'closed'));
 							
-				if($response
-					&& $response->IsError != true)
-				{
-					$account = $response->ResponseXml;
-					//Successfully closed account
+				if($response && $response->IsError != true)
+				{	
+					if(isset($response->ResponseXml->Account))
+					{
+						$account = $response->ResponseXml->Account;
+					}
+					
+					if (isset($account) && !empty($account->Status) && $account->Status == 'closed')
+					{
+						//Only delete tenant-related data after closing Twilio Subaccount
+						$this->settings->delete_tenant($tenant);
+					}
+					else
+					{
+						$message = 'Failed to close subaccount';
+						if($response && $response->ErrorMessage)
+							$message = $response->ErrorMessage;
+						throw new VBX_SettingsException($message);
+					}
 				}
 				else
 				{
@@ -493,8 +507,6 @@ class Site extends User_Controller
 						$message = $response->ErrorMessage;
 					throw new VBX_SettingsException($message);
 				}
-											
-				$this->settings->delete_tenant($tenant);
 				
 				$this->db->trans_complete();
 			}
@@ -503,8 +515,8 @@ class Site extends User_Controller
 				error_log($e->getMessage());
 				$this->db->trans_rollback();
 
-				$data['error'] = true;
-				$data['message'] = $e->getMessage();
+				$data['json']['error'] = true;
+				$data['json']['message'] = $e->getMessage();
 			}
 			
 		}

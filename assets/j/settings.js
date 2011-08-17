@@ -71,6 +71,8 @@ $(document).ready(function() {
 							$(dialog).dialog('close');
 							return;
 						}
+						$(dialog).dialog('close');
+						$.notify('There was an error deleting the Tenant: ' + data.message);
 					},
 					dataType : 'json'
 				});
